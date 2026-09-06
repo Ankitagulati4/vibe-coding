@@ -1,0 +1,31 @@
+#!/bin/sh
+# PART 2 · HOOKS — A pre-commit hook that runs an AI review
+# ---------------------------------------------------------
+# A hook fires automatically on a lifecycle event. Nobody has to remember
+# to run it — that's the point. This one runs before every commit and
+# blocks it if the review flags issues.
+#
+# ACTIVATE (once this folder is a git repo):
+#   git init                                 # if not already a repo
+#   git config core.hooksPath .githooks      # tell git to use this folder
+#   # (on macOS/Linux) chmod +x .githooks/pre-commit
+#
+# The `claude -p ... --diff` line assumes the Claude Code CLI is installed.
+# If it isn't, the hook skips the review and lets the commit through, so it
+# never blocks people who don't have the tool.
+
+echo "Running AI code review before commit..."
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "  (claude CLI not found — skipping AI review)"
+  exit 0
+fi
+
+claude -p "Review staged changes for security issues" --diff
+if [ $? -ne 0 ]; then
+  echo "Review flagged issues. Commit blocked."
+  exit 1
+fi
+
+echo "Review passed. Proceeding with commit."
+exit 0
